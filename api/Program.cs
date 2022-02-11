@@ -8,11 +8,17 @@ var builder = WebApplication.CreateBuilder(args);
 //IConfiguration Initialization
 var provider = builder.Services.BuildServiceProvider();
 var configuration = provider.GetRequiredService<IConfiguration>();
+string[] origins = {"https://localhost:4200","http://localhost:4200"};
+//////////////////////////////////////////////
 
 //Database Initialization
 builder.Services.AddDbContext<DataContext>(options => {
     options.UseSqlite(configuration.GetConnectionString("DevConnection"));
 });
+///////////////////////////////////////////////
+
+//CORS Initialization
+builder.Services.AddCors();
 ///////////////////////////////////////////////
 
 //Controller Initialization
@@ -31,6 +37,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseCors(x => x.AllowAnyHeader().AllowAnyMethod().WithOrigins(origins));
 
 app.UseHttpsRedirection();
 
