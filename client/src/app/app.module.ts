@@ -10,8 +10,27 @@ import { BsDropdownModule } from 'ngx-bootstrap/dropdown';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { HomeComponent } from './home/home.component';
 import { RegisterComponent } from './register/register.component';
+import { MemberListComponent } from './members/member-list/member-list.component';
+import { MemberDetailComponent } from './members/member-detail/member-detail.component';
+import { ListsComponent } from './lists/lists.component';
+import { MessagesComponent } from './messages/messages.component';
+import { ToastrModule } from 'ngx-toastr';
+import { AuthGuard } from './_guards/auth.guard';
 
 const routes: Routes = [
+  { path:'', component: HomeComponent},
+  {
+    path:'',
+    runGuardsAndResolvers: 'always',
+    canActivate:[AuthGuard],
+    children: [
+      { path:'members', component: MemberListComponent},
+      { path:'members/:id', component: MemberDetailComponent},
+      { path:'lists', component: ListsComponent},
+      { path:'messages', component: MessagesComponent},
+    ]
+  },
+  { path:'**', component: HomeComponent, pathMatch: 'full'}
 ];
 
 @NgModule({
@@ -20,6 +39,10 @@ const routes: Routes = [
     NavComponent,
     HomeComponent,
     RegisterComponent,
+    MemberListComponent,
+    MemberDetailComponent,
+    ListsComponent,
+    MessagesComponent,
   ],
   imports: [
     BrowserModule,
@@ -27,7 +50,7 @@ const routes: Routes = [
     HttpClientModule,
     RouterModule.forRoot(routes),
     FormsModule,
-    BsDropdownModule.forRoot()
+    
   ],
   providers: [],
   bootstrap: [AppComponent]

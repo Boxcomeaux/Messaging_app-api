@@ -19,7 +19,7 @@ export class AccountService {
     return this.http.post(`${this.baseurl}api/account/login`,model).pipe(
       map((response: User) => {
         const user = response;
-        if(user){
+        if(user.username){
           localStorage.setItem('user', JSON.stringify(user));
           this.currentUserSource.next(user);
         }

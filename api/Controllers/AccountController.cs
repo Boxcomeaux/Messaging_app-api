@@ -91,12 +91,12 @@ namespace api.Controllers
                 }
                 else
                 {
-                    return new { message = "Username not found" };
+                    return new NotFoundObjectResult(new { message = "Username not found" });
                 }
             }
             catch (Exception e)
             {
-                return new { message = e.Message };
+                return new BadRequestObjectResult(new { message = e.Message });
             }
         }
 
