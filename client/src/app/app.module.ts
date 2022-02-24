@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-import {HttpClientModule} from '@angular/common/http';
+import {HttpClientModule, HTTP_INTERCEPTORS} from '@angular/common/http';
 
 import { AppComponent } from './app.component';
 import { RouterModule, Routes } from '@angular/router';
@@ -16,6 +16,11 @@ import { ListsComponent } from './lists/lists.component';
 import { MessagesComponent } from './messages/messages.component';
 import { ToastrModule } from 'ngx-toastr';
 import { AuthGuard } from './_guards/auth.guard';
+import { ErrorInterceptor } from './_interceptors/error.interceptor';
+import { SharedModule } from './_modules/shared.module';
+import { NotFoundComponent } from './not-found/not-found.component';
+import { MemberCardComponent } from './members/member-card/member-card.component';
+import { JwtInterceptor } from './_interceptors/jwt.interceptor';
 
 const routes: Routes = [
   { path:'', component: HomeComponent},
@@ -25,12 +30,12 @@ const routes: Routes = [
     canActivate:[AuthGuard],
     children: [
       { path:'members', component: MemberListComponent},
-      { path:'members/:id', component: MemberDetailComponent},
+      { path:'members/:username', component: MemberDetailComponent},
       { path:'lists', component: ListsComponent},
       { path:'messages', component: MessagesComponent},
     ]
   },
-  { path:'**', component: HomeComponent, pathMatch: 'full'}
+  { path:'**', component: NotFoundComponent, pathMatch: 'full'}
 ];
 
 @NgModule({
@@ -43,6 +48,8 @@ const routes: Routes = [
     MemberDetailComponent,
     ListsComponent,
     MessagesComponent,
+    NotFoundComponent,
+    MemberCardComponent,
   ],
   imports: [
     BrowserModule,
@@ -50,9 +57,13 @@ const routes: Routes = [
     HttpClientModule,
     RouterModule.forRoot(routes),
     FormsModule,
+    SharedModule
     
   ],
-  providers: [],
+  providers: [
+    {provide: HTTP_INTERCEPTORS, useClass: ErrorInterceptor, multi: true},
+    {provide: HTTP_INTERCEPTORS, useClass: JwtInterceptor, multi: true}
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
