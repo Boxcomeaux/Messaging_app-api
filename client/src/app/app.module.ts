@@ -21,6 +21,10 @@ import { SharedModule } from './_modules/shared.module';
 import { NotFoundComponent } from './not-found/not-found.component';
 import { MemberCardComponent } from './members/member-card/member-card.component';
 import { JwtInterceptor } from './_interceptors/jwt.interceptor';
+import { MemberEditComponent } from './members/member-edit/member-edit.component';
+import { PreventUnsavedChangesGuard } from './_guards/prevent-unsaved-changes.guard';
+import { NgxSpinnerModule } from 'ngx-spinner';
+import { LoadingInterceptor } from './_interceptors/loading.interceptor';
 
 const routes: Routes = [
   { path:'', component: HomeComponent},
@@ -31,6 +35,7 @@ const routes: Routes = [
     children: [
       { path:'members', component: MemberListComponent},
       { path:'members/:username', component: MemberDetailComponent},
+      { path:'member/edit', component: MemberEditComponent, canDeactivate: [PreventUnsavedChangesGuard]},
       { path:'lists', component: ListsComponent},
       { path:'messages', component: MessagesComponent},
     ]
@@ -50,6 +55,7 @@ const routes: Routes = [
     MessagesComponent,
     NotFoundComponent,
     MemberCardComponent,
+    MemberEditComponent,
   ],
   imports: [
     BrowserModule,
@@ -57,12 +63,14 @@ const routes: Routes = [
     HttpClientModule,
     RouterModule.forRoot(routes),
     FormsModule,
-    SharedModule
+    SharedModule,
+    NgxSpinnerModule
     
   ],
   providers: [
     {provide: HTTP_INTERCEPTORS, useClass: ErrorInterceptor, multi: true},
-    {provide: HTTP_INTERCEPTORS, useClass: JwtInterceptor, multi: true}
+    {provide: HTTP_INTERCEPTORS, useClass: JwtInterceptor, multi: true},
+    {provide: HTTP_INTERCEPTORS, useClass: LoadingInterceptor, multi: true}
   ],
   bootstrap: [AppComponent]
 })

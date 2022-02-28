@@ -39,7 +39,6 @@ export class ErrorInterceptor implements HttpInterceptor {
             case 401:
               this.router.navigateByUrl('/');
               this.accountService.logout();
-              this.toastr.error(error.statusText, error.status);
               break;
             case 404:
               this.router.navigateByUrl('/');

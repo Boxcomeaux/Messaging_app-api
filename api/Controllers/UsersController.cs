@@ -4,15 +4,20 @@ using api.Models;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 
 namespace api.Controllers
 {
+    [ApiController]
+    [Route("api/[controller]")]
     [Authorize]
-    public class UsersController : BaseApiController
+    public class UsersController : ControllerBase
     {
         private readonly IUserRepository _userRepository;
         private readonly IMapper _mapper;
+
         public UsersController(IUserRepository userRepository, IMapper mapper)
         {
             _mapper = mapper;
@@ -35,12 +40,19 @@ namespace api.Controllers
             return await _userRepository.GetMemberAsync(username);
         }
 
-        // api/users/{id}
-        /*[HttpGet("{id}")]
-        public async Task<memberDto> GetUser(int id)
+        [HttpPut]
+        public async Task<ActionResult> UpdateUser(MemberUpdateDto memberUpdateDto)
         {
-            var user = await _userRepository.GetUserByIdAsync(id);
-            return _mapper.Map<memberDto>(user);
-        }*/
+            var username = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var user = await _userRepository.GetUserByUsernameAsync(username);
+
+            _mapper.Map(memberUpdateDto, user);
+
+            _userRepository.Update(user);
+        
+            if(await _userRepository.SaveAllAsync()) return new OkObjectResult( new { message = username + " was successfully updated."});
+
+            return new OkObjectResult( new { message = "Failed to update user"});
+        }
     }
 }

@@ -8,7 +8,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace api.Controllers
 {
-    public class AccountController : BaseApiController
+    [ApiController]
+    [Route("api/[controller]")]
+    public class AccountController : ControllerBase
     {
         private readonly DataContext _context;
         private readonly ITokenService _tokenService;
