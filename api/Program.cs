@@ -13,7 +13,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 //IConfiguration Initialization
-var configuration = new ConfigurationBuilder().AddJsonFile("appsettings.Development.json").Build();
+var configuration = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
 string[] origins = {"https://localhost:4200","http://localhost:4200"};
 //////////////////////////////////////////////
 
