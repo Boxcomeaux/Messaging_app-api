@@ -4,8 +4,12 @@ using api.Extensions;
 using api.Interfaces;
 using api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption;
+using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption.ConfigurationModel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,7 +18,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 //IConfiguration Initialization
 var configuration = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
-string[] origins = {"https://localhost:4200","http://localhost:4200"};
+string[] origins = {"https://localhost:4200", "https://localhost:5001"};
 //////////////////////////////////////////////
 
 //DATABASE AND TOKEN INITIALIZATION
@@ -25,6 +29,8 @@ builder.Services.AddApplicationServices(configuration);
 builder.Services.AddIdentityServices(configuration);
 ////////////////////////////////////////////////
 
+// ADD SESSION
+
 //CORS Initialization
 builder.Services.AddCors();
 ///////////////////////////////////////////////
@@ -32,6 +38,17 @@ builder.Services.AddCors();
 //Controller Initialization
 builder.Services.AddControllers();
 ///////////////////////////////////////////////
+
+builder.Services.AddSession();
+
+builder.Services.AddDistributedMemoryCache();
+/*
+builder.Services.AddDataProtection()
+.UseCryptographicAlgorithms(new AuthenticatedEncryptorConfiguration
+{
+    EncryptionAlgorithm = EncryptionAlgorithm.AES_256_GCM,
+    ValidationAlgorithm = ValidationAlgorithm.HMACSHA256
+});*/
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -51,6 +68,18 @@ app.UseCors(x => x.AllowAnyHeader().AllowAnyMethod().WithOrigins(origins));
 
 app.UseHttpsRedirection();
 
+
+// GRAB JWT IF FOUND IN SESSION
+/*app.Use(async (context, next) =>
+{
+    var JWToken = context.Session.GetString("XSRF_Auth");
+    if (!String.IsNullOrEmpty(JWToken))
+    {
+        context.Request.Headers.Add("Authorization", "Bearer " + JWToken);
+    }
+    await next();
+});*/
+app.UseSession();
 //EXECUTE AUTHENTICATION BEFORE USER AUTHORIZATION
 app.UseAuthentication();
 
@@ -58,5 +87,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
 
 app.Run();

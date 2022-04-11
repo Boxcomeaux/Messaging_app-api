@@ -71,7 +71,9 @@ namespace api.Controllers
             try
             {
                 //SEARCH FOR USER IN THE DATABASE
-                var user = await _context.Users.SingleOrDefaultAsync(x => x.UserName.ToLower() == loginDto.Username.ToLower());
+                var user = await _context.Users
+                .Include(p => p.Photos)
+                .SingleOrDefaultAsync(x => x.UserName.ToLower() == loginDto.Username.ToLower());
 
                 //ERROR HANDLING FOR USER SEARCHED IN THE DATABASE
                 if (user != null)
@@ -86,9 +88,24 @@ namespace api.Controllers
                     {
                         if (computedHash[i] != user.PasswordHash[i]) return new { message = "Incorrect password associated with username." };
                     }
+                    
+                    string token = _tokenService.CreateToken(user);
+                   // HttpContext.Session.SetString("XSRF_Auth", token);   
+                                var cookieOptions = new CookieOptions()
+                                {
+                                    IsEssential = true,
+                                    Expires = DateTime.Now.AddDays(1),
+                                    Secure = false,
+                                    HttpOnly = true,
+                                };
+                                HttpContext.Response.Headers.Add("credentials", "same-origin");
+
+                                HttpContext.Response.Cookies.Append("XSRF_Auth", token, cookieOptions);
+                             
                     return new UserDto{
                         Username = user.UserName,
-                        Token = _tokenService.CreateToken(user)
+                        Token = token,
+                        PhotoUrl = user.Photos.FirstOrDefault(x => x.IsMain)?.Url
                     };
                 }
                 else
