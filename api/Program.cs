@@ -1,16 +1,5 @@
-using System.Text;
-using api.Data;
 using api.Extensions;
-using api.Interfaces;
-using api.Services;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption;
-using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption.ConfigurationModel;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.IdentityModel.Tokens;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,9 +28,6 @@ builder.Services.AddCors();
 builder.Services.AddControllers();
 ///////////////////////////////////////////////
 
-builder.Services.AddSession();
-
-builder.Services.AddDistributedMemoryCache();
 /*
 builder.Services.AddDataProtection()
 .UseCryptographicAlgorithms(new AuthenticatedEncryptorConfiguration
@@ -79,7 +65,7 @@ app.UseHttpsRedirection();
     }
     await next();
 });*/
-app.UseSession();
+
 //EXECUTE AUTHENTICATION BEFORE USER AUTHORIZATION
 app.UseAuthentication();
 

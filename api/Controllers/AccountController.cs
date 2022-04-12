@@ -3,6 +3,7 @@ using System.Text;
 using api.Data;
 using api.Interfaces;
 using api.Models;
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,10 +15,13 @@ namespace api.Controllers
     {
         private readonly DataContext _context;
         private readonly ITokenService _tokenService;
-        public AccountController(DataContext context, ITokenService tokenService)
+        private readonly IMapper _mapper;
+
+        public AccountController(DataContext context, ITokenService tokenService, IMapper mapper)
         {
             _tokenService = tokenService;
             _context = context;
+            _mapper = mapper;
         }
 
         [HttpPost("register")]
@@ -29,16 +33,16 @@ namespace api.Controllers
                 //CHECK IF USER EXISTS IN DATABASE
                 if (await UserDoesNotExist(registerDto.Username))
                 {
+                    var user = _mapper.Map<AppUser>(registerDto);
                     //EXECUTE HMACSHA512 ALGORITHM
                     using var hmac = new HMACSHA512();
 
                     //CREATE USER OBJECT
-                    var user = new AppUser
-                    {
-                        UserName = registerDto.Username.Trim(),
-                        PasswordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(registerDto.Password)),
-                        PasswordSalt = hmac.Key
-                    };
+
+                    user.UserName = registerDto.Username.Trim();
+                    user.PasswordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(registerDto.Password));
+                    user.PasswordSalt = hmac.Key;
+
 
                     //ADD USER TO MEMORY
                     _context.Users.Add(user);
@@ -49,7 +53,8 @@ namespace api.Controllers
                     //SEND RESULT TO CLIENT
                     return new UserDto{
                         Username = user.UserName,
-                        Token = _tokenService.CreateToken(user)
+                        Token = _tokenService.CreateToken(user),
+                        KnownAs = user.KnownAs
                     };
                 }
                 else
@@ -95,17 +100,17 @@ namespace api.Controllers
                                 {
                                     IsEssential = true,
                                     Expires = DateTime.Now.AddDays(1),
-                                    Secure = false,
+                                    Secure = true,
                                     HttpOnly = true,
+                                    SameSite = SameSiteMode.Lax
                                 };
-                                HttpContext.Response.Headers.Add("credentials", "same-origin");
-
-                                HttpContext.Response.Cookies.Append("XSRF_Auth", token, cookieOptions);
+                                Response.Cookies.Append("XSRF_Auth", token, cookieOptions);
                              
                     return new UserDto{
                         Username = user.UserName,
                         Token = token,
-                        PhotoUrl = user.Photos.FirstOrDefault(x => x.IsMain)?.Url
+                        PhotoUrl = user.Photos.FirstOrDefault(x => x.IsMain)?.Url,
+                        KnownAs = user.KnownAs
                     };
                 }
                 else
