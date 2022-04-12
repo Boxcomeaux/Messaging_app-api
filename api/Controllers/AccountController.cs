@@ -11,7 +11,7 @@ namespace api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class AccountController : ControllerBase
+    public class AccountController : BaseApiController
     {
         private readonly DataContext _context;
         private readonly ITokenService _tokenService;
@@ -54,7 +54,8 @@ namespace api.Controllers
                     return new UserDto{
                         Username = user.UserName,
                         Token = _tokenService.CreateToken(user),
-                        KnownAs = user.KnownAs
+                        KnownAs = user.KnownAs,
+                        Gender = user.Gender
                     };
                 }
                 else
@@ -110,7 +111,8 @@ namespace api.Controllers
                         Username = user.UserName,
                         Token = token,
                         PhotoUrl = user.Photos.FirstOrDefault(x => x.IsMain)?.Url,
-                        KnownAs = user.KnownAs
+                        KnownAs = user.KnownAs,
+                        Gender = user.Gender
                     };
                 }
                 else

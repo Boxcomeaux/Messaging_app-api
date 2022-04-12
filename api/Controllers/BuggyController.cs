@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace api.Controllers
 {
     [ApiController]
-    public class BuggyController : ControllerBase
+    public class BuggyController : BaseApiController
     {
         private readonly DataContext _context;
         public BuggyController(DataContext context)
