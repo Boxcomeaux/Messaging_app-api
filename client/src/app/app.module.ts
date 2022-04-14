@@ -28,6 +28,13 @@ import { TextInputComponent } from './_forms/text-input/text-input.component';
 import { DateInputComponent } from './_forms/date-input/date-input.component';
 import { MemberMessagesComponent } from './members/member-messages/member-messages.component';
 import { MemberDetailedResolver } from './_resolvers/member-detailed.resolver';
+import { AdminPanelComponent } from './_admin/admin-panel/admin-panel.component';
+import { AdminGuard } from './_guards/admin.guard';
+import { HasRoleDirective } from './_directives/has-role.directive';
+import { UserManagementComponent } from './_admin/user-management/user-management.component';
+import { PhotoManagementComponent } from './_admin/photo-management/photo-management.component';
+import { ModalModule } from 'ngx-bootstrap/modal';
+import { RolesModalComponent } from './modals/roles-modal/roles-modal.component';
 
 const routes: Routes = [
   { path:'', component: HomeComponent},
@@ -41,6 +48,7 @@ const routes: Routes = [
       { path:'member/edit', component: MemberEditComponent, canDeactivate: [PreventUnsavedChangesGuard]},
       { path:'lists', component: ListsComponent},
       { path:'messages', component: MessagesComponent},
+      { path:'admin', component: AdminPanelComponent, canActivate: [AdminGuard]},
     ]
   },
   { path:'**', component: NotFoundComponent, pathMatch: 'full'}
@@ -63,6 +71,11 @@ const routes: Routes = [
     TextInputComponent,
     DateInputComponent,
     MemberMessagesComponent,
+    AdminPanelComponent,
+    HasRoleDirective,
+    UserManagementComponent,
+    PhotoManagementComponent,
+    RolesModalComponent,
   ],
   imports: [
     BrowserModule,
@@ -72,8 +85,7 @@ const routes: Routes = [
     FormsModule,
     ReactiveFormsModule,
     SharedModule,
-    NgxSpinnerModule
-    
+    NgxSpinnerModule, 
   ],
   providers: [
     {provide: HTTP_INTERCEPTORS, useClass: ErrorInterceptor, multi: true},

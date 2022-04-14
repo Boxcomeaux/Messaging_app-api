@@ -4,6 +4,7 @@ using api.Data;
 using api.Interfaces;
 using api.Models;
 using AutoMapper;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,129 +14,86 @@ namespace api.Controllers
     [Route("api/[controller]")]
     public class AccountController : BaseApiController
     {
-        private readonly DataContext _context;
         private readonly ITokenService _tokenService;
         private readonly IMapper _mapper;
+        private readonly SignInManager<AppUser> _signInManager;
+        private readonly UserManager<AppUser> _userManager;
 
-        public AccountController(DataContext context, ITokenService tokenService, IMapper mapper)
+        public AccountController(UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, ITokenService tokenService, IMapper mapper)
         {
+            _userManager = userManager;
+            _signInManager = signInManager;
             _tokenService = tokenService;
-            _context = context;
             _mapper = mapper;
         }
 
         [HttpPost("register")]
-        public async Task<ActionResult<object>> Register(RegisterDto registerDto)
+        public async Task<ActionResult<UserDto>> Register(RegisterDto registerDto)
         {
-            //CHECK AND ADD USER TO MEMORY
-            if (!String.IsNullOrEmpty(registerDto.Username) && !String.IsNullOrEmpty(registerDto.Password))
+            if (String.IsNullOrEmpty(registerDto.Username) || String.IsNullOrEmpty(registerDto.Password)) return BadRequest("Invalid Username and/or Password");
+
+            if (await UserDoesNotExist(registerDto.Username)) return BadRequest("User does not exist");
+
+            var user = _mapper.Map<AppUser>(registerDto);
+
+            user.UserName = registerDto.Username.Trim();
+
+            var result = await _userManager.CreateAsync(user, registerDto.Password);
+
+            if (!result.Succeeded) return BadRequest(result.Errors);
+
+            var roleResult = await _userManager.AddToRoleAsync(user, "Member");
+
+            if(!roleResult.Succeeded) return BadRequest(result.Errors);
+
+            return new UserDto
             {
-                //CHECK IF USER EXISTS IN DATABASE
-                if (await UserDoesNotExist(registerDto.Username))
-                {
-                    var user = _mapper.Map<AppUser>(registerDto);
-                    //EXECUTE HMACSHA512 ALGORITHM
-                    using var hmac = new HMACSHA512();
-
-                    //CREATE USER OBJECT
-
-                    user.UserName = registerDto.Username.Trim();
-                    user.PasswordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(registerDto.Password));
-                    user.PasswordSalt = hmac.Key;
-
-
-                    //ADD USER TO MEMORY
-                    _context.Users.Add(user);
-
-                    //ADD USER TO DATABASE
-                    await _context.SaveChangesAsync();
-
-                    //SEND RESULT TO CLIENT
-                    return new UserDto{
-                        Username = user.UserName,
-                        Token = _tokenService.CreateToken(user),
-                        KnownAs = user.KnownAs,
-                        Gender = user.Gender
-                    };
-                }
-                else
-                {
-                    return new { message = "The Username provided has been taken." };
-                }
-            }
-            else
-            {
-                return new { message = "Please type a valid username and password." };
-            }
-
-            //SAVE USER
+                Username = user.UserName,
+                Token = await _tokenService.CreateToken(user),
+                KnownAs = user.KnownAs,
+                Gender = user.Gender
+            };
         }
 
         [HttpPost("login")]
-        public async Task<object> Login(LoginDto loginDto)
+        public async Task<ActionResult<UserDto>> Login(LoginDto loginDto)
         {
-            try
+            var user = await _userManager.Users
+            .Include(p => p.Photos)
+            .SingleOrDefaultAsync(x => x.UserName.ToLower() == loginDto.Username.ToLower());
+
+            if (user == null) return BadRequest("Username Not Found");
+
+            string token = await _tokenService.CreateToken(user);
+
+            var cookieOptions = new CookieOptions()
             {
-                //SEARCH FOR USER IN THE DATABASE
-                var user = await _context.Users
-                .Include(p => p.Photos)
-                .SingleOrDefaultAsync(x => x.UserName.ToLower() == loginDto.Username.ToLower());
+                IsEssential = true,
+                Expires = DateTime.Now.AddDays(1),
+                Secure = true,
+                HttpOnly = true,
+                SameSite = SameSiteMode.Lax
+            };
 
-                //ERROR HANDLING FOR USER SEARCHED IN THE DATABASE
-                if (user != null)
-                {
-                    //ADD PASSWORDSALT AS KEY fo DECRYPTION
-                    using var hmac = new HMACSHA512(user.PasswordSalt);
+            Response.Cookies.Append("XSRF_Auth", token, cookieOptions);
 
-                    //CONVERT PASSWORD TO HMACSHA512
-                    var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(loginDto.Password));
+            var result = await _signInManager.CheckPasswordSignInAsync(user, loginDto.Password, false);
 
-                    for (int i = 0; i < computedHash.Length; i++)
-                    {
-                        if (computedHash[i] != user.PasswordHash[i]) return new { message = "Incorrect password associated with username." };
-                    }
-                    
-                    string token = _tokenService.CreateToken(user);
-                   // HttpContext.Session.SetString("XSRF_Auth", token);   
-                                var cookieOptions = new CookieOptions()
-                                {
-                                    IsEssential = true,
-                                    Expires = DateTime.Now.AddDays(1),
-                                    Secure = true,
-                                    HttpOnly = true,
-                                    SameSite = SameSiteMode.Lax
-                                };
-                                Response.Cookies.Append("XSRF_Auth", token, cookieOptions);
-                             
-                    return new UserDto{
-                        Username = user.UserName,
-                        Token = token,
-                        PhotoUrl = user.Photos.FirstOrDefault(x => x.IsMain)?.Url,
-                        KnownAs = user.KnownAs,
-                        Gender = user.Gender
-                    };
-                }
-                else
-                {
-                    return new { message = "Username not found" };
-                }
-            }
-            catch (Exception e)
+            if (!result.Succeeded) return Unauthorized();
+
+            return new UserDto
             {
-                return new { message = e.Message };
-            }
+                Username = user.UserName,
+                Token = token,
+                PhotoUrl = user.Photos.FirstOrDefault(x => x.IsMain)?.Url,
+                KnownAs = user.KnownAs,
+                Gender = user.Gender
+            };
         }
 
         private async Task<bool> UserDoesNotExist(string username)
         {
-            try
-            {
-                return await _context.Users.AnyAsync(u => u.UserName.ToLower() == username.ToLower()) == true ? false : true;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
+            return await _userManager.Users.AnyAsync(u => u.UserName.ToLower() == username.ToLower());
         }
     }
 }

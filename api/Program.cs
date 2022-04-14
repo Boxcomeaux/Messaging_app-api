@@ -1,46 +1,38 @@
+using api.Data;
+using api.Entities;
 using api.Extensions;
-
+using api.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
-//IConfiguration Initialization
 var configuration = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
 string[] origins = {"https://localhost:4200", "https://localhost:5001"};
-//////////////////////////////////////////////
 
-//DATABASE AND TOKEN INITIALIZATION
 builder.Services.AddApplicationServices(configuration);
-//////////////////////////////////////////////
 
-//ADD JWT AUTHENTICATION SERVICE
 builder.Services.AddIdentityServices(configuration);
-////////////////////////////////////////////////
 
-// ADD SESSION
-
-//CORS Initialization
 builder.Services.AddCors();
-///////////////////////////////////////////////
 
-//Controller Initialization
 builder.Services.AddControllers();
-///////////////////////////////////////////////
 
-/*
-builder.Services.AddDataProtection()
-.UseCryptographicAlgorithms(new AuthenticatedEncryptorConfiguration
-{
-    EncryptionAlgorithm = EncryptionAlgorithm.AES_256_GCM,
-    ValidationAlgorithm = ValidationAlgorithm.HMACSHA256
-});*/
-
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+// using var scope = app.Services.CreateScope();
+// var services = scope.ServiceProvider;
+// try{
+//     var context = services.GetRequiredService<DataContext>();
+//     var userManager = services.GetRequiredService<UserManager<AppUser>>();
+//     var roleManager = services.GetRequiredService<RoleManager<AppRole>>();
+//     await context.Database.MigrateAsync();
+//     await Seed.SeedUsers(userManager, roleManager);
+// }catch(Exception e){
+//     throw e;
+// }
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -49,27 +41,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-//EXECUTE CROSS-ORIGIN CHECKING BEFORE AUTHENTICATION
 app.UseCors(x => x.AllowAnyHeader().AllowAnyMethod().WithOrigins(origins));
 
 app.UseHttpsRedirection();
 
-
-// GRAB JWT IF FOUND IN SESSION
-/*app.Use(async (context, next) =>
-{
-    var JWToken = context.Session.GetString("XSRF_Auth");
-    if (!String.IsNullOrEmpty(JWToken))
-    {
-        context.Request.Headers.Add("Authorization", "Bearer " + JWToken);
-    }
-    await next();
-});*/
-
-//EXECUTE AUTHENTICATION BEFORE USER AUTHORIZATION
 app.UseAuthentication();
 
-//EXECUTE AUTHORIZATION TO DIRECT USERS TO THEIR ALLOWED DESTINATIONS
 app.UseAuthorization();
 
 app.MapControllers();

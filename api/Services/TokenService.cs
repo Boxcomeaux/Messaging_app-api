@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using api.Interfaces;
 using api.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 
 namespace api.Services
@@ -11,26 +12,27 @@ namespace api.Services
     {
         private readonly SymmetricSecurityKey _key;
         private readonly IConfiguration _config;
-        public TokenService(IConfiguration config)
+        private readonly UserManager<AppUser> _userManager;
+        public TokenService(IConfiguration config, UserManager<AppUser> userManager)
         {
+            _userManager = userManager;
             _config = config;
             _key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["TokenKey"]));
         }
-        public string CreateToken(AppUser user)
+        public async Task<string> CreateToken(AppUser user)
         {
-            //CREATE A LIST OF CLAIMS TO STORE IN A JWT WEB TOKEN
             var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.NameId, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName)
             };
-            /////////////////////////////////////////////////////
 
-            //SIGNING CREDENTIALS FOR A TOKEN BASED ON THE SYMMETRIC SECURITY KEY VALUE
+            var roles = await _userManager.GetRolesAsync(user);
+
+            claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+
             var creds = new SigningCredentials(_key, SecurityAlgorithms.HmacSha512Signature);
-            /////////////////////////////////////////////////////
 
-            //APPLY SPECIFIC SETTINGS FOR THE GENERATED TOKEN
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
@@ -41,19 +43,12 @@ namespace api.Services
                 Issuer = _config["appsettings.Development:Issuer"],
                 Audience = _config["appsettings.Development:Audience"]
             };
-            //////////////////////////////////////////////////////
 
-            //CREATE JWT TOKEN HANDLER
             var tokenHandler = new JwtSecurityTokenHandler();
-            //////////////////////////////////////////////////////
 
-            //CREATE THE JWT TOKEN IN VIRTUAL MEMORY USING THE CREATED ITOKENSERVICE INTERFACE
             var token = tokenHandler.CreateToken(tokenDescriptor);
-            //////////////////////////////////////////////////////
 
-            //SEND JWT TOKEN VALUE BACK TO THE INSTANCE WHERE IT WAS INVOKED
             return tokenHandler.WriteToken(token);
-            //////////////////////////////////////////////////////
         }
     }
 }

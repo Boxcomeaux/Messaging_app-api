@@ -8,6 +8,7 @@ namespace api.Controllers
     [Route("api/[controller]")]
     public class BaseApiController : ControllerBase
     {
-        
+        public readonly string ADMIN = "Admin";
+
     }
 }
