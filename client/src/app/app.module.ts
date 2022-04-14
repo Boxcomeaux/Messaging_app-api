@@ -26,6 +26,8 @@ import { LoadingInterceptor } from './_interceptors/loading.interceptor';
 import { PhotoEditorComponent } from './members/photo-editor/photo-editor.component';
 import { TextInputComponent } from './_forms/text-input/text-input.component';
 import { DateInputComponent } from './_forms/date-input/date-input.component';
+import { MemberMessagesComponent } from './members/member-messages/member-messages.component';
+import { MemberDetailedResolver } from './_resolvers/member-detailed.resolver';
 
 const routes: Routes = [
   { path:'', component: HomeComponent},
@@ -35,7 +37,7 @@ const routes: Routes = [
     canActivate:[AuthGuard],
     children: [
       { path:'members', component: MemberListComponent},
-      { path:'members/:username', component: MemberDetailComponent},
+      { path:'members/:username', component: MemberDetailComponent, resolve: {member: MemberDetailedResolver}},
       { path:'member/edit', component: MemberEditComponent, canDeactivate: [PreventUnsavedChangesGuard]},
       { path:'lists', component: ListsComponent},
       { path:'messages', component: MessagesComponent},
@@ -60,6 +62,7 @@ const routes: Routes = [
     PhotoEditorComponent,
     TextInputComponent,
     DateInputComponent,
+    MemberMessagesComponent,
   ],
   imports: [
     BrowserModule,
