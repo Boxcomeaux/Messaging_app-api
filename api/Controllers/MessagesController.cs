@@ -47,7 +47,7 @@ namespace api.Controllers
 
             if(await _messageRepository.SaveAllAsync()) return Ok(_mapper.Map<MessageDto>(message));
 
-            return BadRequest("Object not added");
+            return BadRequest("Failed to send Message");
         }
 
         [HttpGet]

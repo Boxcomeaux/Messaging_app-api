@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using api.Data;
+using api.Helpers;
 using api.Interfaces;
 using api.Models;
 using AutoMapper;
@@ -62,7 +63,7 @@ namespace api.Controllers
             .Include(p => p.Photos)
             .SingleOrDefaultAsync(x => x.UserName.ToLower() == loginDto.Username.ToLower());
 
-            if (user == null) return BadRequest("Username Not Found");
+            if (user == null) return Errors.OkWithStatus(401, "Invalid login credentials");
 
             string token = await _tokenService.CreateToken(user);
 
