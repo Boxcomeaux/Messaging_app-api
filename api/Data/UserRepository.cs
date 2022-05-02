@@ -58,9 +58,9 @@ namespace api.Data
             return await _context.Users.Include(x => x.Photos).SingleOrDefaultAsync(x => x.UserName.ToLower() == username.ToLower());
         }
 
-        public async Task<bool> SaveAllAsync()
+        public async Task<string> GetUserGender(string username)
         {
-            return await _context.SaveChangesAsync() > 0;
+            return await _context.Users.Where(x => x.UserName == username).Select(x => x.Gender).FirstOrDefaultAsync();
         }
 
         public void Update(AppUser user)

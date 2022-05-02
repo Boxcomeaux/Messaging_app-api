@@ -35,6 +35,7 @@ import { UserManagementComponent } from './_admin/user-management/user-managemen
 import { PhotoManagementComponent } from './_admin/photo-management/photo-management.component';
 import { ModalModule } from 'ngx-bootstrap/modal';
 import { RolesModalComponent } from './modals/roles-modal/roles-modal.component';
+import { ConfirmDialogComponent } from './modals/confirm-dialog/confirm-dialog.component';
 
 const routes: Routes = [
   { path:'', component: HomeComponent},
@@ -76,6 +77,7 @@ const routes: Routes = [
     UserManagementComponent,
     PhotoManagementComponent,
     RolesModalComponent,
+    ConfirmDialogComponent,
   ],
   imports: [
     BrowserModule,
