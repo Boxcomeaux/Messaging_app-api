@@ -10,7 +10,7 @@ import { PresenceService } from './_services/presence.service';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit{
-  title = 'The Dating App';
+  title = 'The Messaging App';
   users: any;
 
   constructor(public serverService: AccountService, private presence: PresenceService) {}
